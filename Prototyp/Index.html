@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Office Balance Assistant – Click-Dummy</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --blue: #2563EB;
+    --blue-light: #DBEAFE;
+    --blue-mid: #93C5FD;
+    --green: #10B981;
+    --green-light: #D1FAE5;
+    --orange: #F97316;
+    --orange-light: #FED7AA;
+    --yellow-light: #FEF9C3;
+    --gray-50: #F8FAFC;
+    --gray-100: #F1F5F9;
+    --gray-200: #E2E8F0;
+    --gray-400: #94A3B8;
+    --gray-600: #475569;
+    --gray-800: #1E293B;
+    --gray-900: #0F172A;
+    --white: #FFFFFF;
+    --shadow: 0 4px 24px rgba(37,99,235,0.10);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.07);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #E8EEF8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding: 32px 16px;
+  }
+
+  .prototype-label {
+    font-size: 12px;
+    color: var(--gray-400);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .app-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+  }
+
+  /* Phone Shell */
+  .phone {
+    width: 375px;
+    height: 720px;
+    background: var(--white);
+    border-radius: 48px;
+    box-shadow: 0 32px 80px rgba(37,99,235,0.18), 0 8px 24px rgba(0,0,0,0.10);
+    overflow: hidden;
+    position: relative;
+    border: 8px solid var(--gray-900);
+  }
+
+  /* Notch */
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 120px; height: 28px;
+    background: var(--gray-900);
+    border-radius: 0 0 20px 20px;
+    z-index: 100;
+  }
+
+  /* Screens */
+  .screen {
+    position: absolute;
+    inset: 0;
+    background: var(--gray-50);
+    display: none;
+    flex-direction: column;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .screen.active {
+    display: flex;
+    opacity: 1;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 44px;
+    padding: 0 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 6px;
+    background: transparent;
+    z-index: 10;
+  }
+
+  .status-time {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-800);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .status-icons {
+    display: flex; gap: 6px; align-items: center;
+  }
+
+  .status-icons span {
+    font-size: 11px; color: var(--gray-600);
+  }
+
+  /* Scrollable content area */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px 20px;
+    scrollbar-width: none;
+  }
+  .content::-webkit-scrollbar { display: none; }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    height: 72px;
+    background: var(--white);
+    border-top: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px 8px;
+    flex-shrink: 0;
+  }
+
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; cursor: pointer; padding: 8px 16px; border-radius: 12px;
+    transition: all 0.2s;
+    border: none; background: none;
+  }
+
+  .nav-item:hover { background: var(--gray-100); }
+  .nav-item.active .nav-icon { color: var(--blue); }
+  .nav-item.active .nav-label { color: var(--blue); font-weight: 600; }
+
+  .nav-icon { font-size: 20px; color: var(--gray-400); transition: color 0.2s; }
+  .nav-label { font-size: 10px; color: var(--gray-400); font-weight: 500; }
+
+  /* ───────── COMPONENTS ───────── */
+
+  .greeting {
+    padding: 12px 0 4px;
+    font-size: 22px; font-weight: 700; color: var(--gray-900);
+    letter-spacing: -0.03em;
+  }
+
+  .greeting-sub {
+    font-size: 13px; color: var(--gray-400); margin-bottom: 16px;
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 12px;
+  }
+
+  .card-blue {
+    background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+    color: white;
+  }
+
+  .work-time-card .time-label {
+    font-size: 12px; opacity: 0.8; margin-bottom: 2px;
+  }
+
+  .work-time-card .time-range {
+    font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
+    margin-bottom: 14px;
+  }
+
+  .btn-primary {
+    background: white; color: var(--blue);
+    border: none; border-radius: 12px;
+    padding: 12px 0; width: 100%;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+  .btn-danger {
+    background: rgba(239,68,68,0.1); color: #EF4444;
+    border: none; border-radius: 12px;
+    padding: 12px 0; width: 100%;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 
+    0.2s;
+  }
+
+  .btn-success {
+    background: rgba(0, 0, 255); color: #1cff23;
+    border: none; border-radius: 12px;
+    padding: 12px 0; width: 100%;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .progress-row {
+    display: flex; gap: 10px; margin-bottom: 12px;
+  }
+
+  .progress-item {
+    flex: 1; background: var(--white); border-radius: 16px;
+    padding: 14px; text-align: center; box-shadow: var(--shadow-sm);
+  }
+
+  .progress-item .val {
+    font-size: 20px; font-weight: 700; color: var(--gray-900);
+    letter-spacing: -0.02em;
+  }
+
+  .progress-item .lbl {
+    font-size: 11px; color: var(--gray-400); margin-top: 2px;
+  }
+
+  .section-title {
+    font-size: 13px; font-weight: 700; color: var(--gray-600);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 16px 0 10px;
+  }
+
+  .plan-item {
+    background: var(--white); border-radius: 14px;
+    padding: 14px 16px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .plan-dot {
+    width: 4px; height: 36px; border-radius: 4px; flex-shrink: 0;
+  }
+
+  .plan-name { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+  .plan-time { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+
+  .plan-check {
+    margin-left: auto; width: 22px; height: 22px;
+    border-radius: 50%; border: 2px solid var(--gray-200);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+  }
+
+  .plan-check.done { background: var(--green); border-color: var(--green); }
+  .plan-check.done::after { content: '✓'; color: white; font-size: 12px; font-weight: 700; }
+
+  /* ── ARBEIT SCREEN ── */
+  .timer-card {
+    background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+    border-radius: 24px; padding: 28px 20px;
+    text-align: center; margin-bottom: 12px;
+    box-shadow: 0 8px 32px rgba(15,23,42,0.3);
+  }
+
+  .timer-header {
+    font-size: 13px; color: rgba(255,255,255,0.6);
+    margin-bottom: 4px; font-weight: 500;
+  }
+
+  .timer-display {
+    font-size: 56px; font-weight: 700; color: white;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -0.02em; margin: 8px 0;
+    text-shadow: 0 0 40px rgba(99,179,237,0.3);
+  }
+
+  .timer-sub {
+    font-size: 12px; color: rgba(255,255,255,0.5);
+    margin-bottom: 20px;
+  }
+
+  .progress-ring {
+    width: 120px; height: 120px; margin: 0 auto 16px;
+    position: relative;
+  }
+
+  .progress-ring svg { transform: rotate(-90deg); }
+
+  .alert-card {
+    border-radius: 16px; padding: 14px 16px;
+    display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .alert-title { font-size: 13px; font-weight: 700; color: var(--gray-800); }
+  .alert-text { font-size: 12px; color: var(--gray-500); margin-top: 2px; line-height: 1.4; }
+
+  /* ── FEIERABEND SCREEN ── */
+  .feierabend-hero {
+    text-align: center; padding: 20px 0 16px;
+  }
+
+  .sun-emoji {
+    font-size: 56px; display: block; margin-bottom: 12px;
+    animation: gentle-float 3s ease-in-out infinite;
+  }
+
+  @keyframes gentle-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .feierabend-title {
+    font-size: 30px; font-weight: 800; color: var(--gray-900);
+    letter-spacing: -0.04em; margin-bottom: 4px;
+  }
+
+  .feierabend-sub {
+    font-size: 14px; color: var(--gray-400);
+  }
+
+  .stat-row {
+    display: flex; gap: 12px; margin: 16px 0;
+  }
+
+  .stat-box {
+    flex: 1; background: var(--white); border-radius: 16px;
+    padding: 16px; text-align: center; box-shadow: var(--shadow-sm);
+  }
+
+  .stat-val {
+    font-size: 28px; font-weight: 800; color: var(--blue);
+    letter-spacing: -0.04em;
+  }
+
+  .stat-lbl {
+    font-size: 11px; color: var(--gray-400); margin-top: 2px; font-weight: 500;
+  }
+
+  .tip-card {
+    border-radius: 20px; padding: 18px;
+    margin-bottom: 10px; display: flex;
+    align-items: flex-start; gap: 14px;
+  }
+
+  .tip-icon-wrap {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+
+  .tip-title { font-size: 13px; font-weight: 700; color: var(--gray-800); margin-bottom: 4px; }
+  .tip-text { font-size: 12px; color: var(--gray-500); line-height: 1.5; }
+
+  .btn-feierabend {
+    background: linear-gradient(135deg, #F97316, #EF4444);
+    color: white; border: none; border-radius: 16px;
+    padding: 18px; width: 100%;
+    font-size: 16px; font-weight: 800;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    box-shadow: 0 8px 24px rgba(249,115,22,0.35);
+    transition: all 0.2s; margin-top: 4px;
+    letter-spacing: -0.01em;
+  }
+
+  .btn-feierabend:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(249,115,22,0.45); }
+
+  .bis-morgen {
+    text-align: center; font-size: 13px; color: var(--gray-400);
+    margin-top: 12px;
+  }
+
+  /* ── SETTINGS SCREEN ── */
+  .settings-title {
+    font-size: 22px; font-weight: 800; color: var(--gray-900);
+    letter-spacing: -0.03em; padding: 12px 0 16px;
+  }
+
+  .settings-section {
+    margin-bottom: 20px;
+  }
+
+  .settings-label {
+    font-size: 11px; font-weight: 700; color: var(--gray-400);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 8px; padding-left: 4px;
+  }
+
+  .settings-card {
+    background: var(--white); border-radius: 18px;
+    overflow: hidden; box-shadow: var(--shadow-sm);
+  }
+
+  .settings-row {
+    padding: 14px 16px; display: flex;
+    align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .settings-row:last-child { border-bottom: none; }
+
+  .settings-row-label {
+    font-size: 14px; color: var(--gray-800); font-weight: 500;
+  }
+
+  .settings-row-value {
+    font-size: 14px; color: var(--gray-400);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Toggle */
+  .toggle {
+    width: 44px; height: 26px; background: var(--blue);
+    border-radius: 13px; position: relative; cursor: pointer;
+    transition: background 0.2s; flex-shrink: 0;
+  }
+
+  .toggle::after {
+    content: ''; position: absolute;
+    width: 20px; height: 20px; background: white;
+    border-radius: 50%; top: 3px; left: 21px;
+    transition: left 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  .toggle.off { background: var(--gray-200); }
+  .toggle.off::after { left: 3px; }
+
+  /* Slider */
+  .slider-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .slider-val { font-size: 12px; color: var(--gray-400); text-align: right; font-family: 'DM Mono', monospace; }
+  input[type=range] {
+    width: 140px; accent-color: var(--blue);
+    height: 4px; cursor: pointer;
+  }
+
+  /* App badges */
+  .app-badge {
+    display: flex; align-items: center; gap: 10px; flex: 1;
+  }
+
+  .app-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  /* ── NAVIGATION INFO ── */
+  .nav-hint {
+    margin-top: 20px;
+    background: white;
+    border-radius: 16px;
+    padding: 14px 20px;
+    display: flex;
+    gap: 20px;
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav-hint-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--gray-600);
+  }
+
+  .nav-hint-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--blue);
+  }
+
+  .screen { animation: none; }
+  .screen.entering { animation: slideIn 0.25s ease forwards; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+</style>
+</head>
+<body>
+
+<p class="prototype-label">Prototyp</p>
+<p class="app-title">Home Office Balance Assistant</p>
+
+<div class="phone">
+
+  <!-- ══════════ SCREEN 1: HOME ══════════ -->
+  <div class="screen active" id="screen-home">
+    <div class="status-bar">
+      <span class="status-time">07:30</span>
+      <div class="status-icons">
+        <span>●●●</span><span>WiFi</span><span>🔋</span>
+      </div>
+    </div>
+    <div class="content">
+      <p class="greeting">Guten Morgen Jordan!👋</p>
+      <p class="greeting-sub">Bereit für einen produktiven Tag?</p>
+
+      <div class="card card-blue work-time-card">
+        <p class="time-label">Arbeitszeit heute</p>
+        <p class="time-range" id="home-work-range">08:00 – 16:00 · Viel Erfolg</p>
+        <button class="btn-primary" onclick="goToScreen('arbeit')">▶ Arbeitszeit starten</button>
+      </div>
+
+      <div class="progress-row">
+        <div class="progress-item">
+          <div class="val">0h</div>
+          <div class="lbl">Bisher gearbeitet</div>
+        </div>
+        <div class="progress-item">
+          <div class="val" id="home-pause-time">45 min</div>
+          <div class="lbl">Pausen-Zeit</div>
+        </div>
+      </div>
+
+      <p class="section-title">Heute geplant</p>
+
+      <div class="plan-item">
+        <div class="plan-dot" style="background:#3B82F6"></div>
+        <div>
+          <div class="plan-name">Vormittag</div>
+          <div class="plan-time" id="morning-time">08:00 – 12:00</div>
+        </div>
+      </div>
+
+      <div class="plan-item">
+        <div class="plan-dot" style="background:#10B981"></div>
+        <div>
+          <div class="plan-name">Mittagspause</div>
+          <div class="plan-time" id="break-time">12:00 – 12:45</div>
+        </div>
+      </div>
+
+      <div class="plan-item">
+        <div class="plan-dot" style="background:#8B5CF6"></div>
+        <div>
+          <div class="plan-name">Nachmittag</div>
+          <div class="plan-time" id="afternoon-time">12:45 – 16:00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-item active" onclick="goToScreen('home')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Home</span>
+      </button>
+      <button class="nav-item" onclick="goToScreen('arbeit')">
+        <span class="nav-icon">💼</span>
+        <span class="nav-label">Arbeit</span>
+      </button>
+      <button class="nav-item" onclick="goToScreen('feierabend')">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Stats</span>
+      </button>
+      <button class="nav-item" onclick="goToScreen('settings')">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 2: ARBEIT ══════════ -->
+  <div class="screen" id="screen-arbeit">
+    <div class="status-bar">
+      <span class="status-time">09:32</span>
+      <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+    </div>
+    <div class="content">
+
+      <div class="timer-card">
+        <p class="timer-header">Arbeitszeit läuft</p>
+        <div class="timer-display" id="timer">00:00</div>
+        <p class="timer-sub" id="timer-subtext">Gesamte Arbeitszeit: 8h · Pause: 45 Min.</p>
+        <button class="btn-danger" onclick="goToScreen('feierabend')" style="background:rgba(239,68,68,0.15);color:#EF4444;font-weight:700;">✕ Arbeitszeit beenden</button>
+      </div>
+
+      <div class="alert-card" style="background:#EFF6FF;">
+        <span class="alert-icon">🚫</span>
+        <div>
+          <div class="alert-title">Apps blockiert</div>
+          <div class="alert-text">Instagram, Facebook und TikTok senden keine Mitteilungen mehr</div>
+        </div>
+      </div>
+
+      <div class="alert-card" style="background:#FFFBEB;">
+        <span class="alert-icon">💡</span>
+        <div>
+          <div class="alert-title">Tipp</div>
+          <div class="alert-text">Stelle dein Handy auf lautlos für maximale Konzentration</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-item" onclick="goToScreen('home')">
+        <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
+      </button>
+      <button class="nav-item active" onclick="goToScreen('arbeit')">
+        <span class="nav-icon">💼</span><span class="nav-label">Arbeit</span>
+      </button>
+      <button class="nav-item" onclick="goToScreen('feierabend')">
+        <span class="nav-icon">📊</span><span class="nav-label">Stats</span>
+      </button>
+      <button class="nav-item" onclick="goToScreen('settings')">
+        <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 3: FEIERABEND ══════════ -->
+  <div class="screen" id="screen-feierabend">
+    <div class="status-bar">
+      <span class="status-time">16:02</span>
+      <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+    </div>
+    <div class="content">
+
+      <div class="feierabend-hero">
+        <span class="sun-emoji">☀️</span>
+        <p class="feierabend-title">Feierabend</p>
+        <p class="feierabend-sub">Du hast für heute alles geschafft!</p>
+      </div>
+
+      <div class="card" style="background:#F0FDF4; border: 1.5px solid #BBF7D0;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <span style="font-size:18px;">✅</span>
+          <span style="font-size:14px;font-weight:700;color:#15803D;">Arbeitszeit beendet</span>
+        </div>
+        <p id="worked-time" style="font-size:13px;color:#166534;">Du hast heute 0 Stunden und 0 Minuten produktiv gearbeitet</p>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-val" id="stat-worked">0h 0m</div>
+          <div class="stat-lbl">Gearbeitet</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-break">45 min</div>
+          <div class="stat-lbl">Pause</div>
+        </div>
+      </div>
+
+      <div class="tip-card" style="background:#FFF7ED;">
+        <div class="tip-icon-wrap" style="background:#FED7AA;">🚶</div>
+        <div>
+          <div class="tip-title">Entspannungs-Tipp</div>
+          <div class="tip-text">Wie wäre es mit einem Spaziergang an der frischen Luft? Das hilft dir, den Kopf frei zu bekommen.</div>
+        </div>
+      </div>
+
+      <button class="btn-feierabend" onclick="goToScreen('home')">Feierabend genießen 🎉</button>
+      <p class="bis-morgen">Bis morgen! 👋</p>
+
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-item" onclick="goToScreen('home')">
+        <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
+      </button>
+      <button class="nav-item" onclick="goToScreen('arbeit')">
+        <span class="nav-icon">💼</span><span class="nav-label">Arbeit</span>
+      </button>
+      <button class="btn-danger" onclick="endWork()" style="background:rgba(239,68,68,0.15);color:#EF4444;font-weight:700;">✕ Arbeitszeit beenden</button>
+        <span class="nav-icon">📊</span><span class="nav-label">Stats</span>
+      </button>
+      <button class="nav-item" onclick="goToScreen('settings')">
+        <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ SCREEN 4: SETTINGS ══════════ -->
+  <div class="screen" id="screen-settings">
+    <div class="status-bar">
+      <span class="status-time">08:14</span>
+      <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+    </div>
+    <div class="content">
+      <p class="settings-title">Einstellungen</p>
+
+      <div class="settings-section">
+        <p class="settings-label">Arbeitszeit</p>
+        <div class="settings-card">
+          <div class="settings-row">
+            <span class="settings-row-label">Startzeit</span>
+            <span class="settings-row-value" id="settings-start-time">08:00</span>
+          </div>
+          <div class="settings-row">
+            <span class="settings-row-label">Endzeit</span>
+            <span class="settings-row-value" id="settings-end-time">16:00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <p class="settings-label">Pausen</p>
+        <div class="settings-card">
+          <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
+            <span class="settings-row-label">Tägliche Pause</span>
+            <div class="slider-wrap" style="width:100%;">
+              <input type="range" id="pause-slider" min="15" max="90" value="45" oninput="updateSlider(this,'pause-val')" style="width:100%;">
+              <span class="slider-val" id="pause-val">45 Minuten</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <p class="settings-label">Fokus & Ablenkung</p>
+        <div class="settings-card">
+          <div class="settings-row">
+            <span class="settings-row-label">Ablenkungserkennung</span>
+            <div class="toggle" id="toggle1" onclick="toggleSwitch('toggle1')"></div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-row-label">Erinnerungen anzeigen</span>
+            <div class="toggle" id="toggle2" onclick="toggleSwitch('toggle2')"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <p class="settings-label">Geblockte Apps</p>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="app-badge">
+              <div class="app-icon" style="background:#FCE7F3;">📸</div>
+              <span class="settings-row-label">Instagram</span>
+            </div>
+            <div class="toggle" id="toggle3" onclick="toggleSwitch('toggle3')"></div>
+          </div>
+          <div class="settings-row">
+            <div class="app-badge">
+              <div class="app-icon" style="background:#DBEAFE;">👤</div>
+              <span class="settings-row-label">Facebook</span>
+            </div>
+            <div class="toggle" id="toggle4" onclick="toggleSwitch('toggle4')"></div>
+          </div>
+          <div class="settings-row">
+            <div class="app-badge">
+              <div class="app-icon" style="background:#F3E8FF;">🎵</div>
+              <span class="settings-row-label">TikTok</span>
+            </div>
+            <div class="toggle" id="toggle5" onclick="toggleSwitch('toggle5')"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <p class="settings-label">Feierabend-Modus</p>
+        <div class="settings-card">
+          <div class="settings-row">
+            <span class="settings-row-label">Feierabend-Erinnerung</span>
+            <div class="toggle" id="toggle6" onclick="toggleSwitch('toggle6')"></div>
+          </div>
+          <div class="settings-row">
+            <button class="btn-success" onclick="confirmSettings()">Settings Bestätigen</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="bottom-nav">
+      <button class="nav-item" onclick="goToScreen('home')">
+        <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
+      </button>
+      <button class="nav-item" onclick="goToScreen('arbeit')">
+        <span class="nav-icon">💼</span><span class="nav-label">Arbeit</span>
+      </button>
+      <button class="nav-item" onclick="goToScreen('feierabend')">
+        <span class="nav-icon">📊</span><span class="nav-label">Stats</span>
+      </button>
+      <button class="nav-item active" onclick="goToScreen('settings')">
+        <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<div class="nav-hint">
+  <div class="nav-hint-item"><div class="nav-hint-dot"></div> Home – Tagesübersicht</div>
+  <div class="nav-hint-item"><div class="nav-hint-dot"></div> Arbeit – Fokus-Modus</div>
+  <div class="nav-hint-item"><div class="nav-hint-dot"></div> Stats – Feierabend</div>
+  <div class="nav-hint-item"><div class="nav-hint-dot"></div> Settings – Einstellungen</div>
+</div>
+
+<script>
+  let workStart = '08:00';
+  let workEnd = '16:00';
+  let breakDuration = 45;
+
+  function timeToMinutes(time) {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  function minutesToTime(totalMinutes) {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+  }
+
+  function formatHours(totalMinutes) {
+    const hours = totalMinutes / 60;
+    if (Number.isInteger(hours)) return hours + 'h';
+    return hours.toFixed(2).replace('.', ',') + 'h';
+  }
+
+  function formatTime(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return h + ' Stunden und ' + m + ' Minuten';
+  }
+
+  function formatShortTime(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return h + 'h ' + m + 'm';
+  }
+
+  function endWork() {
+    stopTimer();
+
+    const workedSeconds = seconds;
+
+    document.getElementById('worked-time').textContent =
+      'Du hast heute ' + formatTime(workedSeconds) + ' produktiv gearbeitet';
+
+    document.getElementById('stat-worked').textContent =
+      formatShortTime(workedSeconds);
+
+    document.getElementById('stat-break').textContent =
+      breakDuration + ' min';
+
+    goToScreen('feierabend');
+  }
+
+  function updateHomePlan() {
+    const startMin = timeToMinutes(workStart);
+    const endMin = timeToMinutes(workEnd);
+
+    const totalPresence = endMin - startMin;
+    const productiveMinutes = totalPresence - breakDuration;
+
+    const morningMinutes = Math.floor(productiveMinutes / 2);
+    const breakStartMin = startMin + morningMinutes;
+    const breakEndMin = breakStartMin + breakDuration;
+
+    document.getElementById('home-work-range').textContent =
+      workStart + ' – ' + workEnd;
+
+    document.getElementById('home-pause-time').textContent = breakDuration + ' min';
+
+    document.getElementById('morning-time').textContent =
+      workStart + ' – ' + minutesToTime(breakStartMin);
+
+    document.getElementById('break-time').textContent =
+      minutesToTime(breakStartMin) + ' – ' + minutesToTime(breakEndMin);
+
+    document.getElementById('afternoon-time').textContent =
+      minutesToTime(breakEndMin) + ' – ' + workEnd;
+
+    document.getElementById('settings-start-time').textContent = workStart;
+    document.getElementById('settings-end-time').textContent = workEnd;
+
+    document.getElementById('timer-subtext').textContent =
+      'Gesamte Arbeitszeit: ' + formatHours(totalPresence) +
+      ' · Pause: ' + breakDuration + ' Min.';
+  }
+
+  function goToScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.remove('active', 'entering');
+    });
+    const target = document.getElementById('screen-' + name);
+    target.classList.add('active', 'entering');
+
+    if (name === 'arbeit') startTimer();
+    else stopTimer();
+  }
+
+  function toggleCheck(id) {
+    document.getElementById(id).classList.toggle('done');
+  }
+
+  function toggleSwitch(id) {
+    document.getElementById(id).classList.toggle('off');
+  }
+
+  function updateSlider(el, valId) {
+    document.getElementById(valId).textContent = el.value + ' Minuten';
+  }
+
+  function confirmSettings() {
+    breakDuration = parseInt(document.getElementById('pause-slider').value, 10);
+
+    updateHomePlan();
+    goToScreen('home');
+  }
+
+  let timerInterval = null;
+  let seconds = 0;
+
+  function startTimer() {
+    stopTimer();
+    seconds = 0;
+
+    const el = document.getElementById('timer');
+    if (el) el.textContent = '00:00';
+
+    timerInterval = setInterval(() => {
+      seconds++;
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      const el = document.getElementById('timer');
+      if (el) el.textContent = m + ':' + s;
+    }, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  updateHomePlan();
+</script>
+
+</body>
+</html>
