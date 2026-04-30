@@ -161,6 +161,11 @@
 
   /* ───────── COMPONENTS ───────── */
 
+  .version-badge {
+    background:var(--blue-l); color:var(--blue); font-size:11px; font-weight:600;
+    padding:3px 10px; border-radius:20px; margin-bottom:24px;
+  }
+
   .greeting {
     padding: 12px 0 4px;
     font-size: 22px; font-weight: 700; color: var(--gray-900);
@@ -278,6 +283,16 @@
   .plan-check.done::after { content: '✓'; color: white; font-size: 12px; font-weight: 700; }
 
   /* ── ARBEIT SCREEN ── */
+  .fokus-info {
+    background:var(--blue-ll); border:1.5px solid var(--blue-l);
+    border-radius:14px; padding:14px; margin-bottom:10px;
+  }
+  .fokus-info-title { font-size:13px; font-weight:700; color:var(--blue); margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+  .fokus-info-text { font-size:12px; color:var(--gray-700); line-height:1.5; }
+  .fokus-steps { margin-top:8px; display:flex; flex-direction:column; gap:5px; }
+  .fokus-step { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--gray-700); }
+  .fokus-step-dot { width:6px; height:6px; border-radius:50%; background:var(--blue); flex-shrink:0; }
+
   .timer-card {
     background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
     border-radius: 24px; padding: 28px 20px;
@@ -502,8 +517,9 @@
 </head>
 <body>
 
-<p class="prototype-label">Prototyp</p>
+<p class="prototype-label">Prototyp · Phase 3</p>
 <p class="app-title">Home Office Balance Assistant</p>
+<div class="version-badge">Version 2.0 – überarbeitet nach Nutzerfeedback</div>
 
 <div class="phone">
 
@@ -590,6 +606,17 @@
       <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
     </div>
     <div class="content">
+
+      <div class="fokus-info">
+        <div class="fokus-info-title">ℹ️ Fokus-Modus aktiv</div>
+        <div class="fokus-info-text">Während der Fokus-Modus läuft, passiert folgendes automatisch:</div>
+        <div class="fokus-steps">
+          <div class="fokus-step"><div class="fokus-step-dot"></div>Ablenkende Apps werden blockiert</div>
+          <div class="fokus-step"><div class="fokus-step-dot"></div>Benachrichtigungen werden stummgeschaltet</div>
+          <div class="fokus-step"><div class="fokus-step-dot"></div>An Pause wird erinnert</div>
+          <div class="fokus-step"><div class="fokus-step-dot"></div>Arbeitszeit wird automatisch aufgezeichnet</div>
+        </div>
+      </div>
 
       <div class="timer-card">
         <p class="timer-header">Arbeitszeit läuft</p>
